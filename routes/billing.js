@@ -6,7 +6,7 @@ const User = require('../models/User');
 const router = express.Router();
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY;
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
 const stripePublishable = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
 // Initialize Stripe
@@ -149,6 +149,41 @@ router.get('/confirm', auth, async (req, res) => {
   } catch (e) {
     console.error('Stripe confirm error:', e);
     res.status(500).json({ message: 'Failed to confirm payment' });
+  }
+});
+
+// POST /api/billing/confirm-checkout - for PaymentSuccess page
+router.post('/confirm-checkout', auth, async (req, res) => {
+  try {
+    if (!stripe) return res.status(500).json({ message: 'Stripe not configured' });
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ message: 'sessionId required' });
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session) return res.status(404).json({ message: 'Session not found' });
+
+    // Validate paid status and ownership
+    const isPaid = session.payment_status === 'paid';
+    const ownerId = session.metadata?.userId;
+
+    if (!isPaid) return res.status(400).json({ message: 'Payment not completed' });
+    if (!ownerId || String(ownerId) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Mark user as paid
+    await User.updateOne({ _id: req.user.id }, { $set: { isPaid: true } });
+
+    const updated = await User.findById(req.user.id).select('_id name email isPaid');
+    return res.json({ 
+      id: updated._id, 
+      name: updated.name, 
+      email: updated.email, 
+      isPaid: updated.isPaid 
+    });
+  } catch (e) {
+    console.error('Stripe confirm-checkout error:', e);
+    res.status(500).json({ message: 'Failed to confirm checkout' });
   }
 });
 
