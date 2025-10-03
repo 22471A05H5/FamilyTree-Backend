@@ -16,21 +16,20 @@ const paymentRoutes = require('./routes/payment');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Middleware - Temporary permissive CORS for debugging
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        process.env.FRONTEND_URL, 
-        'https://familytree-frontend-lhhj.onrender.com',
-        'https://family-album-frontend.onrender.com'
-      ] 
-    : ['http://localhost:3000'],
+  origin: true, // Allow all origins temporarily
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Health
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
