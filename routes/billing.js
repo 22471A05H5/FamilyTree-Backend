@@ -152,6 +152,26 @@ router.get('/confirm', auth, async (req, res) => {
   }
 });
 
+// POST /api/billing/free-upgrade - skip payment and upgrade user directly
+router.post('/free-upgrade', auth, async (req, res) => {
+  try {
+    // Mark user as paid (free upgrade)
+    await User.updateOne({ _id: req.user.id }, { $set: { isPaid: true } });
+
+    const updated = await User.findById(req.user.id).select('_id name email isPaid');
+    return res.json({ 
+      id: updated._id, 
+      name: updated.name, 
+      email: updated.email, 
+      isPaid: updated.isPaid,
+      message: 'Free upgrade successful!'
+    });
+  } catch (e) {
+    console.error('Free upgrade error:', e);
+    res.status(500).json({ message: 'Failed to upgrade user' });
+  }
+});
+
 // POST /api/billing/confirm-checkout - for PaymentSuccess page
 router.post('/confirm-checkout', auth, async (req, res) => {
   try {
