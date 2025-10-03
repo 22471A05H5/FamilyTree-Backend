@@ -110,7 +110,7 @@ router.post('/create-checkout-session', auth, async (req, res) => {
       metadata: {
         userId: req.user.id,
       },
-      success_url: `${frontendUrl}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${frontendUrl}/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/upgrade?canceled=1`,
     });
 
