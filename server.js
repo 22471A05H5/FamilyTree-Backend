@@ -19,9 +19,15 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-url.onrender.com'] // Will update this after frontend deployment
+    ? [
+        process.env.FRONTEND_URL, 
+        'https://familytree-frontend-lhhj.onrender.com',
+        'https://family-album-frontend.onrender.com'
+      ] 
     : ['http://localhost:3000'],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
