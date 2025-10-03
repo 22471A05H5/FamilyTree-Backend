@@ -9,17 +9,18 @@ const stripeSecret = process.env.STRIPE_SECRET_KEY;
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 const stripePublishable = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
-// Check if Stripe is configured
-if (!stripeSecret) {
+// Initialize Stripe
+let stripe = null;
+if (stripeSecret) {
+  try {
+    stripe = new Stripe(stripeSecret);
+    console.log('✅ Stripe initialized successfully');
+  } catch (error) {
+    console.error('❌ Stripe initialization failed:', error.message);
+  }
+} else {
   console.warn('⚠️  STRIPE_SECRET_KEY not configured. Payment features will be disabled.');
 }
-
-if (!stripeSecret) {
-  // Do not crash, but warn – payments won't work until configured
-  console.warn('STRIPE_SECRET_KEY is not set. Stripe payments are disabled.');
-}
-
-const stripe = stripeSecret ? new Stripe(stripeSecret) : null;
 // GET /api/billing/public-key - provide publishable key to frontend
 router.get('/public-key', (req, res) => {
   return res.json({ publishableKey: stripePublishable || null });
@@ -32,15 +33,29 @@ router.post('/create-payment-intent', auth, async (req, res) => {
   }
   try {
     const { amount = 19900, currency = 'inr' } = req.body || {};
+    
+    console.log('Creating payment intent:', { amount, currency, userId: req.user.id });
+    
     const intent = await stripe.paymentIntents.create({
       amount,
+      currency,
       metadata: { userId: req.user.id },
       automatic_payment_methods: { enabled: true },
     });
+    
+    console.log('Payment intent created successfully:', intent.id);
     return res.json({ clientSecret: intent.client_secret, paymentIntentId: intent.id });
   } catch (e) {
-    console.error('Stripe PI error:', e);
-    res.status(500).json({ message: 'Failed to create payment intent' });
+    console.error('Stripe PI error details:', {
+      message: e.message,
+      type: e.type,
+      code: e.code,
+      param: e.param
+    });
+    res.status(500).json({ 
+      message: 'Failed to create payment intent',
+      error: e.message 
+    });
   }
 });
 
