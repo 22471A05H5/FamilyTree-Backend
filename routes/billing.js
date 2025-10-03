@@ -9,26 +9,31 @@ const stripeSecret = process.env.STRIPE_SECRET_KEY;
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 const stripePublishable = process.env.STRIPE_PUBLISHABLE_KEY || '';
 
+// Check if Stripe is configured
+if (!stripeSecret) {
+  console.warn('⚠️  STRIPE_SECRET_KEY not configured. Payment features will be disabled.');
+}
+
 if (!stripeSecret) {
   // Do not crash, but warn – payments won't work until configured
   console.warn('STRIPE_SECRET_KEY is not set. Stripe payments are disabled.');
 }
 
 const stripe = stripeSecret ? new Stripe(stripeSecret) : null;
-
 // GET /api/billing/public-key - provide publishable key to frontend
 router.get('/public-key', (req, res) => {
   return res.json({ publishableKey: stripePublishable || null });
 });
 
-// POST /api/billing/create-payment-intent - for embedded Elements checkout
+// POST /api/billing/create-payment-intent
 router.post('/create-payment-intent', auth, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ message: 'Payment service not configured' });
+  }
   try {
-    if (!stripe) return res.status(500).json({ message: 'Stripe not configured' });
     const { amount = 19900, currency = 'inr' } = req.body || {};
     const intent = await stripe.paymentIntents.create({
       amount,
-      currency,
       metadata: { userId: req.user.id },
       automatic_payment_methods: { enabled: true },
     });
