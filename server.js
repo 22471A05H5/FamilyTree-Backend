@@ -1,4 +1,4 @@
-const express = require('express');
+    const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -10,6 +10,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const photoRoutes = require('./routes/photos');
 const familyRoutes = require('./routes/family');
+const familyTreeRoutes = require('./routes/familyTree');
 const billingRoutes = require('./routes/billing');
 const paymentRoutes = require('./routes/payment');
 
@@ -35,6 +36,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/photos', photoRoutes);
 app.use('/api/family', familyRoutes);
+app.use('/api/family-tree', familyTreeRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/payment', paymentRoutes);
 
