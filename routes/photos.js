@@ -3,7 +3,6 @@ const multer = require('multer');
 const cloudinary = require('../config/cloudinary');
 const Photo = require('../models/Photo');
 const auth = require('../middleware/auth');
-const requirePaid = require('../middleware/requirePaid');
 
 const router = express.Router();
 
@@ -12,7 +11,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB
 
 // POST /api/photos/upload
-router.post('/upload', auth, requirePaid, upload.single('photo'), async (req, res) => {
+router.post('/upload', auth, upload.single('photo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     const category = req.body.category || 'general';
@@ -44,7 +43,7 @@ router.post('/upload', auth, requirePaid, upload.single('photo'), async (req, re
 });
 
 // GET /api/photos
-router.get('/', auth, requirePaid, async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const { category } = req.query;
     const filter = { uploadedBy: req.user.id };
@@ -58,7 +57,7 @@ router.get('/', auth, requirePaid, async (req, res) => {
 });
 
 // DELETE /api/photos/:id
-router.delete('/:id', auth, requirePaid, async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const photo = await Photo.findOne({ _id: req.params.id, uploadedBy: req.user.id });
     if (!photo) return res.status(404).json({ message: 'Photo not found' });
